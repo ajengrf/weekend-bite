@@ -458,24 +458,10 @@ function App() {
   };
 
   useEffect(() => {
-    const root = document.documentElement;
-    const body = document.body;
-    const previousOverflow = body.style.overflow;
-    const previousRootOverflow = root.style.overflow;
-    const previousOverscroll = body.style.overscrollBehavior;
-
-    if (customizerProductId) {
-      body.style.overflow = "hidden";
-      body.style.overscrollBehavior = "none";
-      root.style.overflow = "hidden";
-      root.style.overscrollBehavior = "none";
-    }
+    document.body.style.overflow = customizerProductId ? "hidden" : "";
 
     return () => {
-      body.style.overflow = previousOverflow;
-      body.style.overscrollBehavior = previousOverscroll;
-      root.style.overflow = previousRootOverflow;
-      root.style.overscrollBehavior = "";
+      document.body.style.overflow = "";
     };
   }, [customizerProductId]);
 
