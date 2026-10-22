@@ -220,6 +220,7 @@ function App() {
   const [customizerProductId, setCustomizerProductId] = useState<number | null>(
     null,
   );
+  const [isSheetClosing, setIsSheetClosing] = useState(false);
   const [customizerQty, setCustomizerQty] = useState(1);
   const [modalQty, setModalQty] = useState(1);
   const [drinkOptions, setDrinkOptions] =
@@ -444,11 +445,37 @@ function App() {
     });
   };
 
+  const closeCustomizer = () => {
+    if (!customizerProductId) return;
+
+    setIsSheetClosing(true);
+    const closeTimer = window.setTimeout(() => {
+      setCustomizerProductId(null);
+      setIsSheetClosing(false);
+    }, 220);
+
+    return () => window.clearTimeout(closeTimer);
+  };
+
   useEffect(() => {
-    document.body.style.overflow = customizerProductId ? "hidden" : "";
+    const root = document.documentElement;
+    const body = document.body;
+    const previousOverflow = body.style.overflow;
+    const previousRootOverflow = root.style.overflow;
+    const previousOverscroll = body.style.overscrollBehavior;
+
+    if (customizerProductId) {
+      body.style.overflow = "hidden";
+      body.style.overscrollBehavior = "none";
+      root.style.overflow = "hidden";
+      root.style.overscrollBehavior = "none";
+    }
 
     return () => {
-      document.body.style.overflow = "";
+      body.style.overflow = previousOverflow;
+      body.style.overscrollBehavior = previousOverscroll;
+      root.style.overflow = previousRootOverflow;
+      root.style.overscrollBehavior = "";
     };
   }, [customizerProductId]);
 
@@ -465,9 +492,17 @@ function App() {
       : null;
 
   const openDrinkCustomizer = (product: Product) => {
+    setIsSheetClosing(false);
     setCustomizerProductId(product.id);
     setCustomizerQty(1);
     setModalQty(Math.max(1, product.qty ?? 1));
+  };
+
+  const scrollToSummary = () => {
+    const summaryEl = document.getElementById("ringkasan");
+    if (!summaryEl) return;
+
+    summaryEl.scrollIntoView({ behavior: "smooth", block: "end" });
   };
 
   const isCustomizableProduct = (product: Product) =>
@@ -505,7 +540,7 @@ function App() {
       customizerQty,
     );
 
-    setCustomizerProductId(null);
+    closeCustomizer();
   };
 
   const updateDrinkOption = <Key extends keyof DrinkCustomization>(
@@ -799,7 +834,7 @@ function App() {
           </div>
         </section>
 
-        <section className="px-5 pb-4 pt-7">
+        <section id="ringkasan" className="scroll-mt-8 px-5 pb-4 pt-7">
           <div className="font-[Young_Serif] text-[20px] text-[#4A2C22]">
             Ringkasan
           </div>
@@ -874,7 +909,10 @@ function App() {
           </p>
         </section>
 
-        <div className="sticky bottom-0 z-20 mt-auto flex items-center justify-between gap-3 rounded-t-[16px] bg-[#4A2C22] px-5 py-3 text-[#F7ECDD] shadow-[0_-2px_10px_rgba(74,44,34,0.12)]">
+        <div
+          onClick={scrollToSummary}
+          className="sticky bottom-0 z-20 mt-auto flex cursor-pointer items-center justify-between gap-3 rounded-t-[16px] bg-[#4A2C22] px-5 py-3 text-[#F7ECDD] shadow-[0_-2px_10px_rgba(74,44,34,0.12)]"
+        >
           <div className="leading-tight">
             <div className="text-[13px]">{totalItems} item</div>
             <div className="text-[17px] font-semibold">
@@ -889,11 +927,15 @@ function App() {
 
         {selectedCustomizerProduct && (
           <div
-            className="fixed inset-0 z-50 flex items-end justify-center bg-[rgba(74,44,34,0.6)] px-0 py-0"
-            onClick={() => setCustomizerProductId(null)}
+            className={`fixed inset-0 z-50 flex items-end justify-center bg-[rgba(74,44,34,0.6)] px-0 py-0 transition-opacity duration-300 ${
+              isSheetClosing ? "pointer-events-none opacity-0" : "opacity-100"
+            }`}
+            onClick={closeCustomizer}
           >
             <div
-              className="max-h-[85vh] w-full max-w-[430px] overflow-y-auto rounded-t-[28px] bg-[#FBF6EE] p-3 pb-5 shadow-[0_-10px_30px_rgba(74,44,34,0.15)]"
+              className={`max-h-[85vh] w-full max-w-[430px] overflow-y-auto rounded-t-[28px] bg-[#FBF6EE] p-3 pb-5 shadow-[0_-10px_30px_rgba(74,44,34,0.15)] transition-transform duration-300 ease-out ${
+                isSheetClosing ? "translate-y-[110%]" : "translate-y-0"
+              }`}
               onClick={(event) => event.stopPropagation()}
             >
               <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-[#D9C7AE]" />
@@ -1109,7 +1151,7 @@ function App() {
                         updateQty(selectedCustomizerProduct.id, delta);
                       }
 
-                      setCustomizerProductId(null);
+                      closeCustomizer();
                     }}
                     className="h-[56px] text-base"
                   >
